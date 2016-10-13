@@ -5,6 +5,7 @@ All units are cgs.
 module StarStruc
 
 # provides c0, m_H, k_B, sigma_sb, a_rad
+# include("constants.jl")
 include("constants.jl")
 
 function mu(X, Y)
