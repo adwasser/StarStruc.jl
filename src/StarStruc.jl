@@ -7,6 +7,7 @@ module StarStruc
 # provides c0, m_H, k_B, sigma_sb, a_rad
 # include("constants.jl")
 include("constants.jl")
+include("opacity.jl")
 
 function mu(X, Y)
     #=

@@ -2,7 +2,7 @@
 c0 = 2.99792458e10
     
 # atomic mass unit in g
-m_H = 1.660539040e-30
+m_H = 1.660539040e-24
 
 # Boltzmann constant in erg K^-1
 k_B = 1.38064852e-16
