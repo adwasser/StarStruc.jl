@@ -1,6 +1,9 @@
 # speed of light in a vacuum in cm s^-1
 c0 = 2.99792458e10
-    
+
+# Gravity constant in g^-1 cm^3 s^-2
+G = 6.6738399e-8
+
 # atomic mass unit in g
 m_H = 1.660539040e-24
 
