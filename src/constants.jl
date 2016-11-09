@@ -15,3 +15,12 @@ sigma_sb = 5.6704e-5
 
 # radiation density constant in erg cm^-3 K^-4
 a_rad = 4 * sigma_sb / c0
+
+# solar mass in g
+Msun = 1.98e33
+
+# solar radius in cm
+Rsun = 6.95508e10
+
+# solar luminosity in erg s^-1
+Lsun = 3.845999e13
