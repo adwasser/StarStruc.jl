@@ -22,11 +22,11 @@ function dPdm(m, r, l, P, T)
     return -G * m / (4 * pi * r .^ 4)
 end # dPdm
 
-function dldm(m, r, l, P, T, X, mu)
+function dldm(m, r, l, P, T, mu, X, Y)
     #=
     Derivative of l with respect to m, from energy conservation.
     =#
-    return epsilon_pp(P, T, mu, X)
+    return epsilon_pp(P, T, mu, X) + epsilon(P, T, mu, X, Y)
 end # dldm
 
 function dTdm(m, r, l, P, T, kappa)

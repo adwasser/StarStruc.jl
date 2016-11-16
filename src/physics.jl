@@ -62,7 +62,8 @@ function acceleration(m, r)
     #=
     Calculates the local acceleration due to gravity.
     =#
-    return G * M ./ (R .^ 2)
+    return G * m ./ (r .^ 2)
+    
 end # acceleration
 
 function scale_height(m, r, P, T, mu)
