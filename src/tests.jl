@@ -9,6 +9,7 @@ include("opacity.jl")
 include("nuclear.jl")
 include("convection.jl")
 include("derivs.jl")
+include("odesolve.jl")
 include("shootf.jl")
 
 logkappa_spl = opal_test_spl()
@@ -74,3 +75,4 @@ function test_deriv()
     rs, ls, Ps, Ts = load2(Msun, Rsun, Lsun, X, Y)
     println("deriv at surface: ", deriv(Msun, rs, ls, Ps, Ts, X, Y))    
 end
+

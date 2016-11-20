@@ -8,6 +8,7 @@ module StarStruc
 include("constants.jl")
 include("opacity.jl")
 include("shootf.jl")
+include("odesolve.jl")
 include("tests.jl")
 
 export shootf
