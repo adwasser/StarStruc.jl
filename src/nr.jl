@@ -1,33 +1,69 @@
 #=
-ODE solver.
+Root finding and ODE solver.
 See Numerical Recipes 16.1 - 16.2
 =#
 
-function rk{T<:AbstractFloat}(f::Array{Function, 1},
-                              x0::AbstractFloat,
+using Calculus
+using ODE
+
+function newton(f, x0; epsilon=1e-3, max_count=100)
+    #=
+    Multidimensional Newton-Raphson root finding.
+    TODO: figure out scaled stopping critereon
+    =#
+    x = x0
+    count = 1
+    @info("newton: Starting Newton method with x0 = ", x0)
+    while true
+        @info("newton: count = " * string(count))
+        if count > max_count
+            @warn("newton: Number of iterations has exceeded ", max_count)
+            break
+        end # if
+        # approximate Jacobian
+        J = Calculus.finite_difference_jacobian(f, x)
+        # invert for dx
+        dx = -inv(J) * f(x)
+        x += dx
+        @debug("newton: dx = " * string(dx))
+        close_enough = all(abs(dx) .< epsilon)
+        if close_enough
+            @info("newton: Zero-point found at x = ", x)
+            return x
+        end # if
+        count += 1
+    end # while
+end # newton
+
+function rk{T<:AbstractFloat}(f::Function,
                               y0::Array{T, 1},
-                              h::AbstractFloat,
-                              xf::AbstractFloat)
+                              xrange::Array,
+                              h::AbstractFloat)
     #=
     Classic fourth-order Runge-Kutta method
     f(x, y) = dy / dx
     Integrate from x0 to xf, y0 = y(x0)
     =#
+    x0 = xrange[1]
+    xf = xrange[end]
     n = round(Int, (xf - x0) / h)
     m = length(y0)
     x = Array{Float64}(n)
     y = Array{Float64}(n, m)
     x[1] = x0
     y[1, 1:end] = y0
+    @debug("rk: Starting from x0 = ", x0, " to xf = ", xf)
     for i = 2:n
         xx = x[i - 1]
         yy = transpose(y[i - 1, 1:end])
-        k1 = map(g -> g(xx, yy), f)
-        k2 = map(g -> g(xx + h / 2, yy + h / 2 * k1), f)
-        k3 = map(g -> g(xx + h / 2, yy + h / 2 * k2), f)
-        k4 = map(g -> g(xx + h, yy + h * k3), f)
+        k1 = f(xx, yy)
+        k2 = f(xx + h / 2, yy + h / 2 * k1)
+        k3 = f(xx + h / 2, yy + h / 2 * k2)
+        k4 = f(xx + h, yy + h * k3)
         x[i] = xx + h
-        y[i, 1:end] = yy + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+        dy = h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+        @debug("rk: dy = ", dy)
+        y[i, 1:end] = yy + dy
     end # while
     return x, y
 end # rk
@@ -98,3 +134,4 @@ function rkck{T<:AbstractFloat}(f::Array{Function, 1},
     end #for
     return x, y, h
 end # rkck
+
