@@ -19,7 +19,6 @@ function load1(m, Pc, Tc, X, Y)
     mu = mu_from_composition(X, Y)
     # m = 0.01 * Msun # needs tuning
     rhoc = rho_ideal(Pc, Tc, mu)
-    @debug("load1: rhoc = ", rhoc)
     rc = (3 * m / (4 * pi * rhoc)) ^ (1 / 3)
     lc = dldm(m, 0, 0, 0, Tc, rhoc, X, Y) * m
     @debug("load1: center values = ", [rc, lc, Pc, Tc])
@@ -38,7 +37,7 @@ function load2(M, Rs, Ls, X, Y; max_iterations=1000)
     Ts = T_surface(Rs, Ls)
     Ps = 0
     count = 1
-    while ~converged & (count < 1000)
+    while ~converged & (count < 100)
         kappa = 10 ^ logkappa_spl(log10(rho_guess), log10(Ts))
         Ps = P_surface(M, Rs, kappa)
         rho = rho_ideal(Ps, Ts, mu)
@@ -61,6 +60,9 @@ function init_guess(M, X, Y)
     #=
     Gives a reasonable guess for Pc, Tc, R, and L for a star of mass M
     =#
+    if M == Msun
+        return [Rsun, Lsun, 2.4e17, 1.6e7]
+    end
     mu = mu_from_composition(X, Y)
 
     # mass-radius relation
@@ -90,14 +92,16 @@ function score(m, M, Rs, Ls, Pc, Tc, X, Y, mf)
     # load the surface BC guess
     ys = load2(M, Rs, Ls, X, Y)
     # integrate out from center to fixed point
-    @debug("score: Integrating from m = ", m, " to mf = ", mf)
-    x1, y1 = ode45(D, yc, [m, mf])
-    # x1, y1 = rk(D, yc, [m, mf], 1e-3 * M)
+    # @debug("score: Integrating from m = ", m, " to mf = ", mf)
+    # x1, y1 = ode45(D, yc, [m, mf])
+    x1, y1 = rk(D, yc, [m, mf], 1e-3 * M)
     # integrate in from surface to fixed point
-    @debug("score: Integrating from M = ", M, " to mf = ", mf)
-    x2, y2 = ode45(D, ys, [M, mf])
-    # x2, y2 = rk(D, ys, [M, mf], -1e-3 * M)
-    return y1[end] - y2[end]
+    # @debug("score: Integrating from M = ", M, " to mf = ", mf)
+    # x2, y2 = ode45(D, ys, [M, mf])
+    x2, y2 = rk(D, ys, [M, mf], -1e-3 * M)
+    yf1 = y1[end, 1:end]
+    yf2 = y2[end, 1:end]
+    return yf1 - yf2
 end # score
 
 function shootf(m, M, X, Y; fixed_point=0.8)

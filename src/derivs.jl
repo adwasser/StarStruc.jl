@@ -36,17 +36,18 @@ function dTdm(m, r, l, P, T, mu, kappa)
     #=
     Derivative of T with respect to m, from... thermodynamics.
     =#
-    factor = dPdm(m, r, l, P, T) .* P ./ T
     grad_rad = nabla_rad(m, l, P, T, kappa)
     stable =  grad_rad < 0.4
-     if stable
-        @debug("dTdm: stable to convection")
+    if stable
+        # @debug("dTdm: stable to convection")
         grad = grad_rad
     else
-        @debug("dTdm: unstable to convection")
+        # @debug("dTdm: unstable to convection")
         # mixing length theory convection transport
-        grad = nabla_mlt(m, r, l, P, T, mu, kappa)
+        # grad = nabla_mlt(m, r, l, P, T, mu, kappa)
+        grad = nabla_ad()
     end # if
+    factor = - G .* m .* T ./ (4 * pi .* r .^ 4 .* P)
      return factor .* grad
 end # dTdm
 
@@ -56,12 +57,19 @@ function deriv(m, r, l, P, T, X, Y)
     Calulates the derivatives of (r, l, P, T) with respect to mass.
     See Kippenhahn chapter 10, page 89.
     =#
-    @debug("deriv: y = ", [m, r, l, P, T])
+    # @debug("deriv: y = ", [m, r, l, P, T])
     mu = mu_from_composition(X, Y)
     rho = rho_ideal(P, T, mu)
-    kappa = 10 ^ (logkappa_spl(log10(rho), log10(T)))
-    return [drdm(m, r, l, P, T, rho, mu),
-            dldm(m, r, l, P, T, rho, X, Y),
-            dPdm(m, r, l, P, T),
-            dTdm(m, r, l, P, T, mu, kappa)]
+    kappa = try
+        10.0 ^ (logkappa_spl(log10(rho), log10(T)))
+    catch
+        @debug("deriv: y = ", [m, r, l, P, T])
+        @debug("deriv: rho = ", rho)
+        throw(DomainError)
+    end
+    dy = [drdm(m, r, l, P, T, rho, mu),
+          dldm(m, r, l, P, T, rho, X, Y),
+          dPdm(m, r, l, P, T),
+          dTdm(m, r, l, P, T, mu, kappa)]
+    return dy
 end # deriv

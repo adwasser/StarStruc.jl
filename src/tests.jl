@@ -9,7 +9,7 @@ include("opacity.jl")
 include("nuclear.jl")
 include("convection.jl")
 include("derivs.jl")
-include("odesolve.jl")
+include("nr.jl")
 include("shootf.jl")
 
 logkappa_spl = opal_test_spl()

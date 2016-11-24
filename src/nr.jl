@@ -6,6 +6,29 @@ See Numerical Recipes 16.1 - 16.2
 using Calculus
 using ODE
 
+function fdjac{T<:AbstractFloat}(f::Function, x::Array{T, 1}; epsilon=1e-6)
+    #=
+    Forward difference Jacobian
+    =#
+    n = length(x)
+    y = f(x)
+    jacobian = Array{Float64}(n, n)
+    for i = 1:n
+        temp = x[i]
+        h = abs(x[i]) * epsilon
+        if h == 0.0
+            h = epsilon
+        end # if
+        x[i] = temp + h
+        h = x[i] - temp
+        ystep = f(x)
+        x[i] = temp
+        dy = (ystep - y) ./ h
+        jacobian[1:end, i] = dy
+    end # for
+    return jacobian
+end # fdjac
+
 function newton(f, x0; epsilon=1e-3, max_count=100)
     #=
     Multidimensional Newton-Raphson root finding.
@@ -15,18 +38,23 @@ function newton(f, x0; epsilon=1e-3, max_count=100)
     count = 1
     @info("newton: Starting Newton method with x0 = ", x0)
     while true
-        @info("newton: count = " * string(count))
+        @info("newton: count = ", count)
         if count > max_count
             @warn("newton: Number of iterations has exceeded ", max_count)
             break
         end # if
         # approximate Jacobian
-        J = Calculus.finite_difference_jacobian(f, x)
+        @debug("newton: computing Jacobian")
+        J = fdjac(f, x)
+        # J = Calculus.finite_difference_jacobian(f, x)
+        # @debug("newton: J = ", J)
+        @debug("newton: inverting Jacobian")
         # invert for dx
-        dx = -inv(J) * f(x)
-        x += dx
-        @debug("newton: dx = " * string(dx))
-        close_enough = all(abs(dx) .< epsilon)
+        dx = vec(-inv(J) * f(x)')
+        @debug("newton: dx = ", dx)
+        x = x + dx
+        @debug("newton: x = ", x)
+        close_enough = all(abs(dx) / x .< epsilon)
         if close_enough
             @info("newton: Zero-point found at x = ", x)
             return x
@@ -52,17 +80,15 @@ function rk{T<:AbstractFloat}(f::Function,
     y = Array{Float64}(n, m)
     x[1] = x0
     y[1, 1:end] = y0
-    @debug("rk: Starting from x0 = ", x0, " to xf = ", xf)
     for i = 2:n
         xx = x[i - 1]
         yy = transpose(y[i - 1, 1:end])
         k1 = f(xx, yy)
-        k2 = f(xx + h / 2, yy + h / 2 * k1)
-        k3 = f(xx + h / 2, yy + h / 2 * k2)
-        k4 = f(xx + h, yy + h * k3)
+        k2 = f(xx + h / 2, yy + h / 2 .* k1)
+        k3 = f(xx + h / 2, yy + h / 2 .* k2)
+        k4 = f(xx + h, yy + h .* k3)
         x[i] = xx + h
         dy = h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-        @debug("rk: dy = ", dy)
         y[i, 1:end] = yy + dy
     end # while
     return x, y
