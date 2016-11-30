@@ -23,4 +23,4 @@ const Msun = 1.98e33
 const Rsun = 6.95508e10
 
 # solar luminosity in erg s^-1
-const Lsun = 3.845999e13
+const Lsun = 3.845999e33

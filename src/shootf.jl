@@ -92,13 +92,13 @@ function score(m, M, Rs, Ls, Pc, Tc, X, Y, mf)
     # load the surface BC guess
     ys = load2(M, Rs, Ls, X, Y)
     # integrate out from center to fixed point
-    # @debug("score: Integrating from m = ", m, " to mf = ", mf)
-    # x1, y1 = ode45(D, yc, [m, mf])
-    x1, y1 = rk(D, yc, [m, mf], 1e-3 * M)
+    @debug("score: Integrating from m = ", m, " to mf = ", mf)
+    x1, y1 = ode45(D, yc, [m, mf])
+    # x1, y1 = rk(D, yc, [m, mf], 1e-3 * M)
     # integrate in from surface to fixed point
-    # @debug("score: Integrating from M = ", M, " to mf = ", mf)
-    # x2, y2 = ode45(D, ys, [M, mf])
-    x2, y2 = rk(D, ys, [M, mf], -1e-3 * M)
+    @debug("score: Integrating from M = ", M, " to mf = ", mf)
+    x2, y2 = ode45(D, ys, [M, mf])
+    # x2, y2 = rk(D, ys, [M, mf], -1e-3 * M)
     yf1 = y1[end, 1:end]
     yf2 = y2[end, 1:end]
     return yf1 - yf2

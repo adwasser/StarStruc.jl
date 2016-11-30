@@ -63,6 +63,7 @@ function deriv(m, r, l, P, T, X, Y)
     kappa = try
         10.0 ^ (logkappa_spl(log10(rho), log10(T)))
     catch
+        @debug("derv: Opacity interpolation failed!")
         @debug("deriv: y = ", [m, r, l, P, T])
         @debug("deriv: rho = ", rho)
         throw(DomainError)
