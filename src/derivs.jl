@@ -57,7 +57,7 @@ function deriv(m, r, l, P, T, X, Y)
     Calulates the derivatives of (r, l, P, T) with respect to mass.
     See Kippenhahn chapter 10, page 89.
     =#
-    # @debug("deriv: y = ", [m, r, l, P, T])
+    # @debug("deriv: m, y = ", m, ", ", [r, l, P, T])
     mu = mu_from_composition(X, Y)
     rho = rho_ideal(P, T, mu)
     kappa = try
@@ -72,5 +72,6 @@ function deriv(m, r, l, P, T, X, Y)
           dldm(m, r, l, P, T, rho, X, Y),
           dPdm(m, r, l, P, T),
           dTdm(m, r, l, P, T, mu, kappa)]
+    # @debug("deriv: dy = ", dy)
     return dy
 end # deriv

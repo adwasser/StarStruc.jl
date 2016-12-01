@@ -45,16 +45,15 @@ function newton(f, x0; epsilon=1e-3, max_count=100)
         end # if
         # approximate Jacobian
         @debug("newton: computing Jacobian")
-        J = fdjac(f, x)
-        # J = Calculus.finite_difference_jacobian(f, x)
-        # @debug("newton: J = ", J)
+        # J = fdjac(f, x)
+        J = Calculus.finite_difference_jacobian(f, x)
         @debug("newton: inverting Jacobian")
         # invert for dx
-        dx = vec(-inv(J) * f(x)')
+        dx = -inv(J) * f(x)
         @debug("newton: dx = ", dx)
-        x = x + dx
-        @debug("newton: x = ", x)
         close_enough = all(abs(dx) / x .< epsilon)
+        x = x + dx
+        @debug("newton: x = ", x)        
         if close_enough
             @info("newton: Zero-point found at x = ", x)
             return x
@@ -72,7 +71,7 @@ function rk{T<:AbstractFloat}(f::Function,
     f(x, y) = dy / dx
     Integrate from x0 to xf, y0 = y(x0)
     =#
-    @debug("rk: starting Runge-Kutta, y0 = ", y0, ", h = ", h)
+    # @debug("rk: starting Runge-Kutta, y0 = ", y0, ", h = ", h)
     x0 = xrange[1]
     xf = xrange[end]
     n = round(Int, (xf - x0) / h)
@@ -82,19 +81,22 @@ function rk{T<:AbstractFloat}(f::Function,
     x[1] = x0
     y[1, 1:end] = y0
     for i = 2:n
-        @debug("rk: i = ", i)
         xx = x[i - 1]
-        yy = transpose(y[i - 1, 1:end])
+        yy = y[i - 1, 1:end]
         k1 = f(xx, yy)
-        @debug("rk: k1 = ", k1)
         k2 = f(xx + h / 2, yy + h / 2 .* k1)
-        @debug("rk: k2 = ", k2)
         k3 = f(xx + h / 2, yy + h / 2 .* k2)
-        @debug("rk: k3 = ", k3)
         k4 = f(xx + h, yy + h .* k3)
-        @debug("rk: k4 = ", k4)
         x[i] = xx + h
         dy = h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+        # if i < 10
+        #     # @debug("rk: i = ", i)
+        #     # @debug("rk: k1 = ", k1)
+        #     # @debug("rk: k2 = ", k2)
+        #     # @debug("rk: k3 = ", k3)
+        #     # @debug("rk: k4 = ", k4)
+        #     # @debug("rk: dy / y= ", dy ./ yy)
+        # end
         y[i, 1:end] = yy + dy
     end # while
     return x, y
