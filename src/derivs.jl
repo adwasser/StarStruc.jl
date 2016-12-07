@@ -4,8 +4,6 @@ Derivatives of (r, l, P, T) with respect to the mass coordinate.
 
 include("constants.jl")
 include("physics.jl")
-include("nuclear.jl")
-include("convection.jl")
 include("opacity.jl")
 
 # TODO: implement an opacity that changes with composition
@@ -36,7 +34,7 @@ function dTdm(m, r, l, P, T, mu, kappa)
     #=
     Derivative of T with respect to m, from... thermodynamics.
     =#
-    grad_rad = nabla_rad(m, l, P, T, kappa)
+    grad_rad = del_rad(m, l, P, T, kappa)
     stable =  grad_rad < 0.4
     if stable
         # @debug("dTdm: stable to convection")
@@ -45,7 +43,7 @@ function dTdm(m, r, l, P, T, mu, kappa)
         # @debug("dTdm: unstable to convection")
         # mixing length theory convection transport
         # grad = nabla_mlt(m, r, l, P, T, mu, kappa)
-        grad = nabla_ad()
+        grad = del_ad()
     end # if
     factor = - G .* m .* T ./ (4 * pi .* r .^ 4 .* P)
      return factor .* grad
