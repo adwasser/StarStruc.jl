@@ -34,7 +34,12 @@ function load2(M, Rs, Ls, X, Y; max_iterations=1000)
     mu = mu_from_composition(X, Y)
     converged = false
     rho_guess = 1e-8 # need a less arbitrary guess?
-    Ts = T_surface(Rs, Ls)
+    Ts = try
+        T_surface(Rs, Ls)
+    catch
+        @warn("load2: Rs = ", Rs)
+        @warn("load2: Ls = ", Ls)        
+    end
     Ps = 0
     count = 1
     while ~converged & (count < 100)
@@ -62,6 +67,9 @@ function init_guess(M, X, Y)
     =#
     if M == Msun
         return [Rsun, Lsun, 2.4e17, 1.6e7]
+    elseif M == 5 * Msun
+        @info("init_guess: from MESA-Web")
+        return [Rsun * 10 ^ 2.123517, Lsun * 10 ^ 3.582811, 10 ^ 8.966376, 10 ^ 5.47908]
     end
     mu = mu_from_composition(X, Y)
 
@@ -82,10 +90,7 @@ function init_guess(M, X, Y)
     return [R, L, Pc, Tc]
 end # init_guess
 
-function score(m, M, Rs, Ls, Pc, Tc, X, Y, mf)
-    #=
-    Function to zero.  Integrates out and in.
-    =#
+function profiles(m, M, Rs, Ls, Pc, Tc, X, Y, mf)
     D(x, y) = deriv(x, y[1], y[2], y[3], y[4], X, Y)
     # load the center BC guess
     yc = load1(m, Pc, Tc, X, Y)
@@ -99,9 +104,29 @@ function score(m, M, Rs, Ls, Pc, Tc, X, Y, mf)
     # @debug("score: Integrating from M = ", M, " to mf = ", mf)
     # x2, y2 = ode45(D, ys, [M, mf])
     x2, y2 = rk(D, ys, [M, mf], -1e-3 * M)
+    return x1, y1, x2, y2
+end
+
+function score(m, M, Rs, Ls, Pc, Tc, X, Y, mf)
+    #=
+    Function to zero.  Integrates out and in.
+    =#
+    D(x, y) = deriv(x, y[1], y[2], y[3], y[4], X, Y)
+    # load the center BC guess
+    yc = load1(m, Pc, Tc, X, Y)
+    # load the surface BC guess
+    ys = load2(M, Rs, Ls, X, Y)
+    # integrate out from center to fixed point
+    # @debug("score: Integrating from m = ", m, " to mf = ", mf)
+    # x1, y1 = ode4(D, yc, [m, mf])
+    x1, y1 = rk(D, yc, [m, mf], 1e-3 * M)
+    # integrate in from surface to fixed point
+    # @debug("score: Integrating from M = ", M, " to mf = ", mf)
+    # x2, y2 = ode4(D, ys, [M, mf])
+    x2, y2 = rk(D, ys, [M, mf], -1e-3 * M)
     yf1 = y1[end, 1:end]
     yf2 = y2[end, 1:end]
-    return yf1 - yf2
+    return (yf1 - yf2) ./ yf1
 end # score
 
 function shootf(m, M, X, Y; fixed_point=0.8)

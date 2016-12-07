@@ -6,8 +6,6 @@ using Base.Test
 include("constants.jl")
 include("physics.jl")
 include("opacity.jl")
-include("nuclear.jl")
-include("convection.jl")
 include("derivs.jl")
 include("nr.jl")
 include("shootf.jl")
@@ -52,6 +50,30 @@ function test_dTdm()
     rc, lc, _, __ = load1(Pc, Tc, X, Y)
     mc = 0.001 * Msun
     dTdm(mc, rc, lc, Pc, Tc, kappac)
+end
+
+function test_profile()
+    X = 0.7
+    Y = 0.28
+    m = 0.01 * Msun
+    M = 5 * Msun
+    mf = 0.8 * M
+    Rs, Ls, Pc, Tc = init_guess(M, X, Y)
+    x1, y1, x2, y2 = profiles(m, M, Rs, Ls, Pc, Tc, X, Y, mf)
+    
+    # plot(x1 / Msun, y1[1:end, 1] / Rsun, label=L"$R_\mathrm{in}$")
+    # plot!(x2 / Msun, y2[1:end, 1] / Rsun, label=L"$R_\mathrm{out}$")
+
+    # plot(x1 / Msun, y1[1:end, 2] / Lsun, label=L"$L_\mathrm{in}$")
+    # plot!(x2 / Msun, y2[1:end, 2] / Lsun, label=L"$L_\mathrm{out}$")
+
+    # plot(x1 / Msun, y1[1:end, 3], label=L"$P_\mathrm{in}$", yscale=:log10)
+    # plot!(x2 / Msun, y2[1:end, 3], label=L"$P_\mathrm{out}$", yscale=:log10)
+
+    plot(x1 / Msun, y1[1:end, 4], label=L"$T_\mathrm{in}$", yscale=:log10)
+    plot!(x2 / Msun, y2[1:end, 4], label=L"$T_\mathrm{out}$", yscale=:log10)
+
+    return x1, y1, x2, y2
 end
 
 function test_load()

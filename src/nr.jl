@@ -47,12 +47,19 @@ function newton(f, x0; epsilon=1e-3, max_count=100)
         @debug("newton: computing Jacobian")
         # J = fdjac(f, x)
         J = Calculus.finite_difference_jacobian(f, x)
+        for i=1:size(J)[1]
+            @debug("newton: J", i, " = ", J[i, 1:end])
+        end
         @debug("newton: inverting Jacobian")
         # invert for dx
-        dx = -inv(J) * f(x)
-        @debug("newton: dx = ", dx)
+        invJ = inv(J)
+        for i=1:size(J)[1]
+            @debug("newton: invJ", i, " = ", invJ[i, 1:end])
+        end
+        dx = invJ * f(x)
+        @debug("newton: dx / x = ", dx ./ x)
         close_enough = all(abs(dx) / x .< epsilon)
-        x = x + dx
+        x = x + 1e-2 * dx
         @debug("newton: x = ", x)        
         if close_enough
             @info("newton: Zero-point found at x = ", x)
@@ -74,7 +81,12 @@ function rk{T<:AbstractFloat}(f::Function,
     # @debug("rk: starting Runge-Kutta, y0 = ", y0, ", h = ", h)
     x0 = xrange[1]
     xf = xrange[end]
-    n = round(Int, (xf - x0) / h)
+    if x0 < xf
+        h = abs(h)
+    else
+        h = -abs(h)
+    end
+    n = round(Int, abs((xf - x0) / h))
     m = length(y0)
     x = Array{Float64}(n)
     y = Array{Float64}(n, m)
