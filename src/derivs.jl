@@ -62,7 +62,8 @@ function deriv(m, r, l, P, T, X, Y)
     catch
         @debug("deriv: Opacity interpolation failed!")
         @debug("deriv: y = ", [r, l, P, T])
-        @debug("deriv: rho = ", rho)
+        @debug("deriv: logT = ", log10(T))
+        @debug("deriv: logR = ", log10(rho / (T / 1e6)^3))
         throw(DomainError)
     end
     dy = [drdm(m, r, l, P, T, rho, mu),

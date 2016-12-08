@@ -22,7 +22,7 @@ function load1(m, Pc, Tc, X, Y)
     rhoc = rho_ideal(Pc, Tc, mu)
     rc = (3 * m / (4 * pi * rhoc)) ^ (1 / 3)
     lc = dldm(m, 0, 0, 0, Tc, rhoc, X, Y) * m
-    @debug("load1: center values = ", [rc, lc, Pc, Tc])
+    # @debug("load1: center values = ", [rc, lc, Pc, Tc])
     return [rc, lc, Pc, Tc]
 end # load1
 
@@ -58,7 +58,7 @@ function load2(M, Rs, Ls, X, Y; max_iterations=1000)
     if count >= max_iterations
         @warn("load2: Exceeded ", max_iterations, " iterations!")
     end # if
-    @debug("load2: surface values = ", [Rs, Ls, Ps, Ts])
+    # @debug("load2: surface values = ", [Rs, Ls, Ps, Ts])
     return [Rs, Ls, Ps, Ts]
 end # load2
 
@@ -66,15 +66,27 @@ function init_guess(M, X, Y)
     #=
     Gives a reasonable guess for Pc, Tc, R, and L for a star of mass M
     =#
-    y4 = [Rsun * 10 ^ 2.123517, Lsun * 10 ^ 3.582811, 10 ^ 8.966376, 10 ^ 5.47908]
-    y5 = [Rsun * 10 ^ 2.035001, Lsun * 10 ^ 3.359756, 10 ^ 9.142044, 10 ^ 5.477481]
+    yhalf = [Rsun * 10 ^ 0.062544715341505616, Lsun * 10 ^ -0.36630780815983022, 10 ^ 19.700356657315954, 10 ^ 7.2863105891013289]
+    y2 = [Rsun * 10 ^ 0.36072469919806871, Lsun * 10 ^ 1.3021335874028637, 10 ^ 17.186879800538229, 10 ^ 7.3557279873577759]
+    y5 = [Rsun * 10 ^ 0.59322648100945885, Lsun * 10 ^ 2.8743140385067893, 10 ^ 16.752833342638592, 10 ^ 7.4547058342916337]
+    y4 = [Rsun * 10 ^ 0.52962615387538248, Lsun * 10 ^ 2.50275963393719, 10 ^ 16.855407680647915, 10 ^ 7.429616124439673]
+    y10 = [Rsun * 10 ^ 0.68191099104456998, Lsun * 10 ^ 3.8447263619458569, 10 ^ 16.517451455410988, 10 ^ 7.5012272142698366] 
     if M == Msun
         return [Rsun, Lsun, 2.4e17, 1.6e7]
+    elseif M == 0.5 * Msun
+        @info("init_guess: from MESA-Web")
+        return yhalf
+    elseif M == 2 * Msun
+        @info("init_guess: from MESA-Web")
+        return y2
     elseif (M >= 4 * Msun) & (M <= 5 * Msun)
         @info("init_guess: from MESA-Web")
         dm = M - 4 * Msun
         dydm = (y5 - y4) / Msun
         return y4 + dydm * dm
+    elseif M == 10 * Msun
+        @info("init_guess: from MESA-Web")
+        return y10
     end
     mu = mu_from_composition(X, Y)
     
@@ -130,7 +142,7 @@ function score(m, M, Rs, Ls, Pc, Tc, X, Y, mf; n=Int(1e3))
 
     # create the mass grid
     mass_out = collect(linspace(m, mf, n))
-    mass_in = collect(linspace(M, mf, 1000 * n))
+    mass_in = collect(linspace(M, mf, 100 * n))
     # integrate out from center to fixed point
     # @debug("score: Integrating from m = ", m, " to mf = ", mf)
     # x1, y1 = ode4(D, yc, [m, mf])

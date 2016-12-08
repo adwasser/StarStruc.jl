@@ -29,7 +29,7 @@ function fdjac{T<:AbstractFloat}(f::Function, x::Array{T, 1}; epsilon=1e-6)
     return jacobian
 end # fdjac
 
-function newton(f, x0; epsilon=1e-3, max_count=100)
+function newton(f, x0; epsilon=1e-2, max_count=1000, init_damping=1e-3)
     #=
     Multidimensional Newton-Raphson root finding.
     TODO: figure out scaled stopping critereon
@@ -37,6 +37,7 @@ function newton(f, x0; epsilon=1e-3, max_count=100)
     x = x0
     count = 1
     @info("newton: Starting Newton method with x0 = ", x0)
+    damping = init_damping
     while true
         @info("newton: count = ", count)
         if count > max_count
@@ -44,23 +45,33 @@ function newton(f, x0; epsilon=1e-3, max_count=100)
             break
         end # if
         # approximate Jacobian
-        @debug("newton: computing Jacobian")
         # J = fdjac(f, x)
         J = Calculus.finite_difference_jacobian(f, x)
         for i=1:size(J)[1]
             @debug("newton: J", i, " = ", J[i, 1:end])
         end
-        @debug("newton: inverting Jacobian")
         # invert for dx
         invJ = inv(J)
         for i=1:size(J)[1]
             @debug("newton: invJ", i, " = ", invJ[i, 1:end])
         end
-        dx = invJ * f(x)
-        @debug("newton: dx / x = ", dx ./ x)
-        close_enough = all(abs(dx) / x .< epsilon)
-        x = x + 1e-2 * dx
-        @debug("newton: x = ", x)        
+        dx = -invJ * f(x)
+        frac = dx ./ x
+        @info("newton: dx / x = ", frac)
+        # adaptive damping
+        if all(abs(frac) .< 0.1)
+            damping = 1.0
+        elseif all(abs(frac) .< 1)
+            damping = 0.1
+        elseif all(abs(frac) .< 10)
+            damping = 0.01
+        else
+            damping = 0.001
+        end
+        @info("newton: damping = ", damping)
+        close_enough = all(abs(frac) .< epsilon)
+        x = x + dx .* damping
+        @info("newton: x = ", x)        
         if close_enough
             @info("newton: Zero-point found at x = ", x)
             return x
