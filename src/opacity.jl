@@ -47,6 +47,7 @@ function load_table(table_string)
     log_rho = []
     log_T = []
     log_kappa = []
+    log_R = []
     for (i, line) in enumerate(lines[7: end])
         entries = float(split(line, whitespace))
         logT = entries[1]
@@ -55,6 +56,7 @@ function load_table(table_string)
             if entry == 9.999
                 continue
             end
+            push!(log_R, logR[j])
             dens = 10 ^ logR[j] * (temp * 1e-6) ^ 3
             push!(log_T, logT)
             push!(log_rho, log10(dens))
@@ -63,8 +65,9 @@ function load_table(table_string)
     end
     log_rho = map(Float64, log_rho)
     log_T = map(Float64, log_T)
+    log_R = map(Float64, log_R)
     log_kappa = map(Float64, log_kappa)
-    return Spline2D(log_rho, log_T, log_kappa, s=1)
+    return Spline2D(log_R, log_T, log_kappa, s=1)
 end
 
 function opal_test_spl()
@@ -73,3 +76,7 @@ function opal_test_spl()
     return spl
 end
 
+function opacity(spl, rho, T)
+    R = rho ./ (T / 1e6) .^ 3
+    return 10 .^ spl(log10(R), log10(T))
+end

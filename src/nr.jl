@@ -69,10 +69,21 @@ function newton(f, x0; epsilon=1e-3, max_count=100)
     end # while
 end # newton
 
+function rkstep{T<:AbstractFloat}(f::Function,
+                                  y::Array{T, 1},
+                                  x::T,
+                                  h::T)
+    k1 = f(x, y)
+    k2 = f(x + h / 2, y + h / 2 .* k1)
+    k3 = f(x + h / 2, y + h / 2 .* k2)
+    k4 = f(x + h, y + h .* k3)
+    dy = h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+    return y + dy
+end # rkstep
+
 function rk{T<:AbstractFloat}(f::Function,
                               y0::Array{T, 1},
-                              xrange::Array,
-                              h::AbstractFloat)
+                              xrange::Array{T, 1})
     #=
     Classic fourth-order Runge-Kutta method
     f(x, y) = dy / dx
@@ -81,35 +92,18 @@ function rk{T<:AbstractFloat}(f::Function,
     # @debug("rk: starting Runge-Kutta, y0 = ", y0, ", h = ", h)
     x0 = xrange[1]
     xf = xrange[end]
-    if x0 < xf
-        h = abs(h)
-    else
-        h = -abs(h)
-    end
-    n = round(Int, abs((xf - x0) / h))
+    n = length(xrange)
     m = length(y0)
     x = Array{Float64}(n)
     y = Array{Float64}(n, m)
     x[1] = x0
     y[1, 1:end] = y0
-    for i = 2:n
-        xx = x[i - 1]
-        yy = y[i - 1, 1:end]
-        k1 = f(xx, yy)
-        k2 = f(xx + h / 2, yy + h / 2 .* k1)
-        k3 = f(xx + h / 2, yy + h / 2 .* k2)
-        k4 = f(xx + h, yy + h .* k3)
-        x[i] = xx + h
-        dy = h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-        # if i < 10
-        #     # @debug("rk: i = ", i)
-        #     # @debug("rk: k1 = ", k1)
-        #     # @debug("rk: k2 = ", k2)
-        #     # @debug("rk: k3 = ", k3)
-        #     # @debug("rk: k4 = ", k4)
-        #     # @debug("rk: dy / y= ", dy ./ yy)
-        # end
-        y[i, 1:end] = yy + dy
+    for (i, xstep) in enumerate(xrange[2:end])
+        j = i + 1
+        h = xstep - x[j - 1]
+        yy = rkstep(f, y[j - 1, 1:end], x[j - 1], h)
+        x[j] = xstep
+        y[j, 1:end] = yy
     end # while
     return x, y
 end # rk

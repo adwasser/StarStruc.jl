@@ -35,15 +35,14 @@ function dTdm(m, r, l, P, T, mu, kappa)
     Derivative of T with respect to m, from... thermodynamics.
     =#
     grad_rad = del_rad(m, l, P, T, kappa)
-    stable =  grad_rad < 0.4
+    grad_ad = del_ad()
+    stable =  grad_rad < grad_ad
     if stable
         # @debug("dTdm: stable to convection")
         grad = grad_rad
     else
         # @debug("dTdm: unstable to convection")
-        # mixing length theory convection transport
-        # grad = nabla_mlt(m, r, l, P, T, mu, kappa)
-        grad = del_ad()
+        grad = grad_ad
     end # if
     factor = - G .* m .* T ./ (4 * pi .* r .^ 4 .* P)
      return factor .* grad
@@ -59,7 +58,7 @@ function deriv(m, r, l, P, T, X, Y)
     mu = mu_from_composition(X, Y)
     rho = rho_ideal(P, T, mu)
     kappa = try
-        10.0 ^ (logkappa_spl(log10(rho), log10(T)))
+        opacity(logkappa_spl, rho, T)
     catch
         @debug("deriv: Opacity interpolation failed!")
         @debug("deriv: y = ", [r, l, P, T])
