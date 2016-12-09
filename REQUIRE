@@ -1,7 +1,6 @@
 julia 0.5
 Dierckx
 Logging
-Calculus
 Plots
 PyPlot
 LaTeXStrings

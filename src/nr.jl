@@ -3,8 +3,6 @@ Root finding and ODE solver.
 See Numerical Recipes 16.1 - 16.2
 =#
 
-using Calculus
-
 function fdjac{T<:AbstractFloat}(f::Function, x::Array{T, 1}; epsilon=1e-6)
     #=
     Forward difference Jacobian
@@ -36,6 +34,7 @@ function newton(f, x0; epsilon=1e-2, max_count=1000)
     x = x0
     count = 1
     @info("newton: Starting Newton method with x0 = ", x0)
+    damping = 0.001
     while true
         @info("newton: count = ", count)
         if count > max_count
@@ -43,26 +42,21 @@ function newton(f, x0; epsilon=1e-2, max_count=1000)
             break
         end # if
         # approximate Jacobian
-        # J = fdjac(f, x)
-        J = Calculus.finite_difference_jacobian(f, x)
-        for i=1:size(J)[1]
-            @debug("newton: J", i, " = ", J[i, 1:end])
-        end
+        J = fdjac(f, x)
         # invert for dx
         invJ = inv(J)
-        for i=1:size(J)[1]
-            @debug("newton: invJ", i, " = ", invJ[i, 1:end])
-        end
         dx = -invJ * f(x)
         frac = dx ./ x
         @info("newton: dx / x = ", frac)
-        
         # adaptive damping
-        if any(abs(frac) .> 0.1)
-            # dampen to move no more than 10%
-            damping = 0.1 / maximum(abs(frac))
-        else
+        if all(abs(frac) .< 0.1)
             damping = 1
+        elseif any(abs(frac) .> 1)
+            # restrict to 1% change
+            damping = 0.01 / maximum(abs(frac))
+        else
+            # dampen to move no more than 10% change, and no more than 2
+            damping = minimum([0.1 / maximum(abs(frac)), 2 * damping])
         end
         @info("newton: damping = ", damping)
         close_enough = all(abs(frac) .< epsilon)
@@ -115,6 +109,7 @@ function rk{T<:AbstractFloat}(f::Function,
     return x, y
 end # rk
 
+# TODO: finish adaptive step size
 function rkck{T<:AbstractFloat}(f::Array{Function, 1},
                                 x0::AbstractFloat,
                                 y0::Array{T, 1},

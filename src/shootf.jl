@@ -108,49 +108,34 @@ function init_guess(M, X, Y)
 end # init_guess
 
 function profiles(m, M, Rs, Ls, Pc, Tc, X, Y, mf; n=1000)
-    
-    D(x, y) = deriv(x, y[1], y[2], y[3], y[4], X, Y)
-    # load the center BC guess
-    yc = load1(m, Pc, Tc, X, Y)
-    # load the surface BC guess
-    ys = load2(M, Rs, Ls, X, Y)
-
-    # create the mass grid
-    mass_out = collect(linspace(m, mf, n))
-    mass_in = collect(linspace(M, mf, 100 * n))
-    # integrate out from center to fixed point
-    # @debug("score: Integrating from m = ", m, " to mf = ", mf)
-    # x1, y1 = ode4(D, yc, [m, mf])
-    x1, y1 = rk(D, yc, mass_out)
-    # integrate in from surface to fixed point
-    # @debug("score: Integrating from M = ", M, " to mf = ", mf)
-    # x2, y2 = ode4(D, ys, [M, mf])
-    x2, y2 = rk(D, ys, mass_in)
-    
-    return x1, y1, x2, y2
-end
-
-function score(m, M, Rs, Ls, Pc, Tc, X, Y, mf; n=Int(1e3))
     #=
-    Function to zero.  Integrates out and in.
+    Integrates outward from m to mf and inward from M to mf to construct
+    r, l, P, and T profiles from the given initial conditions.
     =#
     D(x, y) = deriv(x, y[1], y[2], y[3], y[4], X, Y)
     # load the center BC guess
     yc = load1(m, Pc, Tc, X, Y)
     # load the surface BC guess
     ys = load2(M, Rs, Ls, X, Y)
-
     # create the mass grid
     mass_out = collect(linspace(m, mf, n))
     mass_in = collect(linspace(M, mf, 100 * n))
     # integrate out from center to fixed point
-    # @debug("score: Integrating from m = ", m, " to mf = ", mf)
-    # x1, y1 = ode4(D, yc, [m, mf])
     x1, y1 = rk(D, yc, mass_out)
     # integrate in from surface to fixed point
-    # @debug("score: Integrating from M = ", M, " to mf = ", mf)
-    # x2, y2 = ode4(D, ys, [M, mf])
     x2, y2 = rk(D, ys, mass_in)
+    return x1, y1, x2, y2
+end
+
+function profiles(star::Star, Rs, Ls, Pc, Tc; n=1000)
+    return profiles(star.m, star.M, Rs, Ls, Pc, Tc, star.X, star.Y, star.mf)
+end
+
+function score(m, M, Rs, Ls, Pc, Tc, X, Y, mf; n=Int(1e3))
+    #=
+    Function to zero.  Integrates out and in.
+    =#
+    x1, y1, x2, y2 = profiles(m, M, Rs, Ls, Pc, Tc, X, Y, mf)
     yf1 = y1[end, 1:end]
     yf2 = y2[end, 1:end]
     return (yf1 - yf2) ./ yf1
@@ -170,3 +155,18 @@ function shootf(m, M, X, Y; fixed_point=0.8)
     Rs, Ls, Pc, Tc = newton(f, y0)
     return [Rs, Ls, Pc, Tc]
 end # shootf
+
+function shootf(star::Star)
+    return shootf(star.m, star.M, star.X, star.Y)
+end
+
+function shootf!(star::Star)
+    bc = shootf(star)
+    x1, y1, x2, y2 = profiles(star, bc...)
+    star.grid = vcat(x1, reverse(x2))
+    star.r = vcat(y1[1:end, 1], reverse(y2[1:end, 1]))
+    star.l = vcat(y1[1:end, 2], reverse(y2[1:end, 2]))
+    star.P = vcat(y1[1:end, 3], reverse(y2[1:end, 3]))
+    star.T = vcat(y1[1:end, 4], reverse(y2[1:end, 4]))
+    return x1, y1, x2, y2
+end

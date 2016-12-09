@@ -71,7 +71,7 @@ function load_table(table_string)
 end
 
 function opal_test_spl()
-    table_string = readall(open(joinpath(Pkg.dir("StarStruc"), "data", "test.txt")))
+    table_string = readstring(open(joinpath(Pkg.dir("StarStruc"), "data", "test.txt")))
     spl = load_table(table_string)
     return spl
 end
