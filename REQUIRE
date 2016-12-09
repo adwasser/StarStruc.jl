@@ -1,9 +1,7 @@
 julia 0.5
 Dierckx
 Logging
-ValidatedNumerics
 Calculus
-ODE
 Plots
 PyPlot
 LaTeXStrings

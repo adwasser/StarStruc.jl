@@ -16,6 +16,7 @@ include("nr.jl")
 include("tests.jl")
 
 export shootf
+export Msun
 
 end # module
 

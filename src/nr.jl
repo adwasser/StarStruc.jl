@@ -4,7 +4,6 @@ See Numerical Recipes 16.1 - 16.2
 =#
 
 using Calculus
-using ODE
 
 function fdjac{T<:AbstractFloat}(f::Function, x::Array{T, 1}; epsilon=1e-6)
     #=
@@ -29,7 +28,7 @@ function fdjac{T<:AbstractFloat}(f::Function, x::Array{T, 1}; epsilon=1e-6)
     return jacobian
 end # fdjac
 
-function newton(f, x0; epsilon=1e-2, max_count=1000, init_damping=1e-3)
+function newton(f, x0; epsilon=1e-2, max_count=1000)
     #=
     Multidimensional Newton-Raphson root finding.
     TODO: figure out scaled stopping critereon
@@ -37,7 +36,6 @@ function newton(f, x0; epsilon=1e-2, max_count=1000, init_damping=1e-3)
     x = x0
     count = 1
     @info("newton: Starting Newton method with x0 = ", x0)
-    damping = init_damping
     while true
         @info("newton: count = ", count)
         if count > max_count
@@ -58,15 +56,13 @@ function newton(f, x0; epsilon=1e-2, max_count=1000, init_damping=1e-3)
         dx = -invJ * f(x)
         frac = dx ./ x
         @info("newton: dx / x = ", frac)
+        
         # adaptive damping
-        if all(abs(frac) .< 0.1)
-            damping = 1.0
-        elseif all(abs(frac) .< 1)
-            damping = 0.1
-        elseif all(abs(frac) .< 10)
-            damping = 0.01
+        if any(abs(frac) .> 0.1)
+            # dampen to move no more than 10%
+            damping = 0.1 / maximum(abs(frac))
         else
-            damping = 0.001
+            damping = 1
         end
         @info("newton: damping = ", damping)
         close_enough = all(abs(frac) .< epsilon)
