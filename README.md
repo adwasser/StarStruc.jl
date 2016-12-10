@@ -1,7 +1,7 @@
 # StarStruc.jl
 Stellar structure code in Julia
 
-It's a glass cannon, but the 4 Msun case runs in less than a minute.
+It's a glass cannon, but the 4 Msun case runs on the order of a minute.
 
 To install from Julia, use
 ```julia
