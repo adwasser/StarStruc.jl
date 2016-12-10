@@ -1,0 +1,68 @@
+\documentclass[twocolumn]{article}
+
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{verbatim}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[margin=3cm]{geometry}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+
+\newcommand{\E}[1]{\ensuremath{\times 10^{#1}}}
+\newcommand{\D}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+\newcommand{\de}{\ensuremath{\mathrm{d}}}
+\newcommand{\dee}{\ensuremath{\ \mathrm{d}}}
+
+\title{\texttt{StarStruc.jl}: Stellar structure in Julia}
+\author{Asher Wasserman}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+This document presents a description of a static stellar structure model implemented in \texttt{Julia}, a high-performance dynamical programming language.  The accompanying code can be found at \url{https://github.com/adwasser/StarStruc.jl}.  For carefully considered initial guesses as to the boundary values, the code should converge on a structure model on the order of a few minutes.  For arbitrary initial guesses, the code will likely crash and burn.
+
+\section{Background}
+
+Stars are fearsome beasts, so we tame them by introducing some simplifying assumptions.  We model stars as non-rotating, time-independent, uniform composition, spherically symmetric cows.  Such domesticated animals still can pose numerical dangers to reckless star-cow wranglers, however.
+
+We assume that the star is a fully ionized ideal gas, so its equation of state is
+\[ P(\rho, T) = \frac{\rho}{\mu m_H} kT\]
+where 
+\[ \mu = \frac{1}{1 + 3X + Y/2} \]
+is the dimensionless mean molecular weight for hydrogen mass fraction, $X$, and helium mass fraction, $Y$.  With this equation of state, our simple equations of stellar structure are
+\begin{align*}
+  \D{r}{m} &= \frac{1}{4\pi r^2 \rho} \\
+  \D{\ell}{m} &= \epsilon_n \\
+  \D{P}{m} &= -\frac{Gm}{4\pi r^4} \\
+  \D{T}{m} &= -\frac{GmT}{4\pi r^4P} \nabla
+\end{align*}
+
+Here, $\epsilon_n$ is the nuclear burning luminosity per unit mass, a quantity that is dependent on temperature, density and composition, 
+\[ \nabla = \frac{T}{P}\D{T}{P} = 
+  \begin{cases}
+    \nabla_\text{ad} & \nabla_\text{rad} \ge \nabla_\text{ad} \\
+    \nabla_\text{rad} & \nabla_\text{rad} < \nabla_\text{ad}
+  \end{cases}
+\]
+For our assumed ideal gas, $\nabla_\text{ad} = 0.4$, and for a diffusive radiative transport model,
+\[ \nabla_\text{rad} = \frac{3}{16\pi a c G}\frac{\kappa \ell P}{m T^4}\]
+
+\section{Methods}
+
+\section{Results}
+
+\section{Conclusions}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

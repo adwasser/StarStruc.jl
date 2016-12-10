@@ -1,4 +1,13 @@
+# Julia
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
 deps/deps.jl
+
+# LaTeX
+*.aux
+*.fls
+*.log
+*.out
+*.fdb_latexmk
+*.el
