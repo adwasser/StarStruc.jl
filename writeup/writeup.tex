@@ -1,4 +1,4 @@
-\documentclass[twocolumn]{article}
+\documentclass[onecolumn]{article}
 
 \usepackage{amsmath}
 \usepackage{mathtools}
@@ -33,26 +33,44 @@ This document presents a description of a static stellar structure model impleme
 Stars are fearsome beasts, so we tame them by introducing some simplifying assumptions.  We model stars as non-rotating, time-independent, uniform composition, spherically symmetric cows.  Such domesticated animals still can pose numerical dangers to reckless star-cow wranglers, however.
 
 We assume that the star is a fully ionized ideal gas, so its equation of state is
-\[ P(\rho, T) = \frac{\rho}{\mu m_H} kT\]
+\begin{equation}
+  P(\rho, T) = \frac{\rho}{\mu m_H} kT + \frac{a_\text{rad}}{3} T^4
+\end{equation}
 where 
-\[ \mu = \frac{1}{1 + 3X + Y/2} \]
-is the dimensionless mean molecular weight for hydrogen mass fraction, $X$, and helium mass fraction, $Y$.  With this equation of state, our simple equations of stellar structure are
-\begin{align*}
-  \D{r}{m} &= \frac{1}{4\pi r^2 \rho} \\
-  \D{\ell}{m} &= \epsilon_n \\
-  \D{P}{m} &= -\frac{Gm}{4\pi r^4} \\
-  \D{T}{m} &= -\frac{GmT}{4\pi r^4P} \nabla
-\end{align*}
+\begin{equation}
+  \mu = \frac{1}{1 + 3X + Y/2}
+\end{equation}
+is the dimensionless mean molecular weight for hydrogen mass fraction, $X$, and helium mass fraction, $Y$.  The term on the right accounts for pressure due to radiation and is generally small compared to the gas pressure.
 
-Here, $\epsilon_n$ is the nuclear burning luminosity per unit mass, a quantity that is dependent on temperature, density and composition, 
-\[ \nabla = \frac{T}{P}\D{T}{P} = 
+With this equation of state, our simple equations of stellar structure are
+\begin{align}
+  \D{r}{m} &= \frac{1}{4\pi r^2 \rho} \\
+  \D{\ell}{m} &= \epsilon_n \nonumber \\
+  \D{P}{m} &= -\frac{Gm}{4\pi r^4} \nonumber \\
+  \D{T}{m} &= -\frac{GmT}{4\pi r^4P} \nabla \nonumber
+\end{align}
+
+For simplicity, we model energy transport such that convection efficiently transports any energy beyond the adiabatic limit, and so
+\begin{align} \nabla = \frac{T}{P}\D{T}{P} = 
   \begin{cases}
     \nabla_\text{ad} & \nabla_\text{rad} \ge \nabla_\text{ad} \\
     \nabla_\text{rad} & \nabla_\text{rad} < \nabla_\text{ad}
   \end{cases}
-\]
+\end{align}
 For our assumed ideal gas, $\nabla_\text{ad} = 0.4$, and for a diffusive radiative transport model,
-\[ \nabla_\text{rad} = \frac{3}{16\pi a c G}\frac{\kappa \ell P}{m T^4}\]
+\begin{equation} 
+  \nabla_\text{rad} = \frac{3}{16\pi a c G}\frac{\kappa \ell P}{m T^4} 
+\end{equation}
+
+We model the energy generation only through hydrogen burning.  $\epsilon_n$  is the nuclear burning luminosity per unit mass, a quantity that is dependent on temperature, density and composition.  The hydrogen burning occurs through the proton-proton chain and the CNO cycle, both of which have their own temperature dependencies.
+
+\begin{align}  
+  \epsilon_\text{pp} =& 2.5\E{4} \psi f_{11} g_\text{11} \rho X_1^2 T_9^{-2/3} \\
+                      & \times \exp\left(-\frac{3.381}{T_9^{1/3}}\right) \nonumber \\
+  \epsilon_\text{CNO} =& 8.24\E{25} g_{14,1} X_\text{CNO} X_1 \rho T_9^{-2/3} \nonumber \\
+                      & \times \exp\left(-15.231 T_9^{-1/3} - \left(\frac{T_9}{0.8}\right)^2\right) \nonumber
+\end{align}
+
 
 \section{Methods}
 
