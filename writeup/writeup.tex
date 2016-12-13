@@ -28,9 +28,20 @@
 
 This document presents a description of a static stellar structure model implemented in \texttt{Julia}, a high-performance dynamical programming language.  The accompanying code can be found at \url{https://github.com/adwasser/StarStruc.jl}.  For carefully considered initial guesses as to the boundary values, the code should converge on a structure model on the order of a few minutes.  For arbitrary initial guesses, the code will likely crash and burn.
 
-\section{Background}
+\section{Physics}
 
 Stars are fearsome beasts, so we tame them by introducing some simplifying assumptions.  We model stars as non-rotating, time-independent, uniform composition, spherically symmetric cows.  Such domesticated animals still can pose numerical dangers to reckless star-cow wranglers, however.
+
+% Stellar Structure and Evolution, Kippenhahn, Weigert, and Weiss, 2012.
+
+We can concisely write the equations of stellar structure as
+\begin{align}
+  \D{r}{m} &= \frac{1}{4\pi r^2 \rho} \label{eq:drdm} \\
+  \D{\ell}{m} &= \epsilon_n  \label{eq:dldm} \\
+  \D{P}{m} &= -\frac{Gm}{4\pi r^4} \label{eq:dPdm} \\
+  \D{T}{m} &= -\frac{GmT}{4\pi r^4P} \nabla \label{eq:dTdm}
+\end{align}
+What is then left, is to specify the equation of state, $\rho(P, T)$, the energy generation per unit mass $\epsilon_n$, the temperature gradient, $\nabla = \partial\log T / \partial\log P$, and the opacity, $\kappa(\rho, T)$.
 
 We assume that the star is a fully ionized ideal gas, so its equation of state is
 \begin{equation}
@@ -41,14 +52,6 @@ where
   \mu = \frac{1}{1 + 3X + Y/2}
 \end{equation}
 is the dimensionless mean molecular weight for hydrogen mass fraction, $X$, and helium mass fraction, $Y$.  The term on the right accounts for pressure due to radiation and is generally small compared to the gas pressure.
-
-With this equation of state, our simple equations of stellar structure are
-\begin{align}
-  \D{r}{m} &= \frac{1}{4\pi r^2 \rho} \\
-  \D{\ell}{m} &= \epsilon_n \nonumber \\
-  \D{P}{m} &= -\frac{Gm}{4\pi r^4} \nonumber \\
-  \D{T}{m} &= -\frac{GmT}{4\pi r^4P} \nabla \nonumber
-\end{align}
 
 For simplicity, we model energy transport such that convection efficiently transports any energy beyond the adiabatic limit, and so
 \begin{align} \nabla = \frac{T}{P}\D{T}{P} = 
@@ -62,17 +65,33 @@ For our assumed ideal gas, $\nabla_\text{ad} = 0.4$, and for a diffusive radiati
   \nabla_\text{rad} = \frac{3}{16\pi a c G}\frac{\kappa \ell P}{m T^4} 
 \end{equation}
 
-We model the energy generation only through hydrogen burning.  $\epsilon_n$  is the nuclear burning luminosity per unit mass, a quantity that is dependent on temperature, density and composition.  The hydrogen burning occurs through the proton-proton chain and the CNO cycle, both of which have their own temperature dependencies.
-
+We only model hydrogen burning for energy generation.  Hydrogen burning occurs through the proton-proton chain and the CNO cycle, both of which have their own temperature dependencies.  In the weak electron shielding approximation, we have
 \begin{align}  
-  \epsilon_\text{pp} =& 2.5\E{4} \psi f_{11} g_\text{11} \rho X_1^2 T_9^{-2/3} \\
-                      & \times \exp\left(-\frac{3.381}{T_9^{1/3}}\right) \nonumber \\
-  \epsilon_\text{CNO} =& 8.24\E{25} g_{14,1} X_\text{CNO} X_1 \rho T_9^{-2/3} \nonumber \\
-                      & \times \exp\left(-15.231 T_9^{-1/3} - \left(\frac{T_9}{0.8}\right)^2\right) \nonumber
+  \epsilon_\text{pp} &= 2.5\E{4} \psi g_\text{11} \rho X_1^2 T_9^{-2/3} \exp\left(-\frac{3.381}{T_9^{1/3}}\right) \text{ erg s}^{-1}\text{ g}^{-1} \\
+  \epsilon_\text{CNO} &= 8.24\E{25} g_{14,1} X_\text{CNO} X_1 \rho T_9^{-2/3} \exp\left(-15.231 T_9^{-1/3} - \left(\frac{T_9}{0.8}\right)^2\right) \text{ erg s}^{-1}\text{ g}^{-1} \nonumber
+\end{align}
+where $T_9 = 10^{-9} \times (T / K)$. Here, $\psi$ accounts for the different branches of the proton-proton chain, and is generally between 1 and 1.5. The polynomial terms $g_{11}$ and $g_{14, 1}$ are given by
+\begin{align}
+  g_{11} &= 1 + 3.82 T_9 + 1.51 T_9^2 + 0.144 T_9^3 - 0.0114 T_9^4 \\
+  g_{14, 1} &= 1 - 2.00 T_9 + 3.41 T_9^2 - 2.43 T_9^3 \nonumber
+\end{align}
+For the CNO mass fraction, $X_\text{CNO}$, we assume that carbon, nitrogen, and oxygen make up 70\% of the metal mass fraction.
+
+The last missing piece for completely specifying the derivatives is a relevant opacity model for stellar matter.  Here we use the OPAL opacity tables, taken from \url{http://opalopacity.llnl.gov/}, and interpolate between values of $\rho$ and $T$.
+
+With all of the above, we have four coupled first-order differential equations.  To solve for our four structure profiles, we need to impose some physically meaningful boundary conditions.  Starting from a mass shell very close to the center, $m_c$, we can use the linearizations of equations \ref{eq:drdm} and \ref{eq:dldm} to get
+\begin{align}
+  r_c &= \left(\frac{3}{4\pi \rho_c}\right)^{1/3} m_c^{1/3} \\
+  \ell_c &= \epsilon_n m_c \nonumber
 \end{align}
 
+At the surface, we define our photosphere to be at the radius, $R_s$, where we have an optical depth of $2 / 3$.  Then from hydrostatic equilibrium and the definition of the effective temperature, we have
+\begin{align}
+  P_s &= \frac{GM}{R_s^2}\frac{2}{3}\frac{1}{\kappa} \\
+  L_s &= 4\pi R_s^2 \sigma T_s^4 \nonumber
+\end{align}
 
-\section{Methods}
+\section{Numerics}
 
 \section{Results}
 
