@@ -15,6 +15,7 @@
 \newcommand{\D}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
 \newcommand{\de}{\ensuremath{\mathrm{d}}}
 \newcommand{\dee}{\ensuremath{\ \mathrm{d}}}
+\newcommand{\vv}{\ensuremath{\mathbf{}}}
 
 \title{\texttt{StarStruc.jl}: Stellar structure in Julia}
 \author{Asher Wasserman}
@@ -34,6 +35,8 @@ Stars are fearsome beasts, so we tame them by introducing some simplifying assum
 
 % Stellar Structure and Evolution, Kippenhahn, Weigert, and Weiss, 2012.
 
+\subsection{Structure equations}
+
 We can concisely write the equations of stellar structure as
 \begin{align}
   \D{r}{m} &= \frac{1}{4\pi r^2 \rho} \label{eq:drdm} \\
@@ -41,7 +44,7 @@ We can concisely write the equations of stellar structure as
   \D{P}{m} &= -\frac{Gm}{4\pi r^4} \label{eq:dPdm} \\
   \D{T}{m} &= -\frac{GmT}{4\pi r^4P} \nabla \label{eq:dTdm}
 \end{align}
-What is then left, is to specify the equation of state, $\rho(P, T)$, the energy generation per unit mass $\epsilon_n$, the temperature gradient, $\nabla = \partial\log T / \partial\log P$, and the opacity, $\kappa(\rho, T)$.
+where $r(m)$ is the radius, $\ell(m)$ is the luminosity, $P(m)$ is the pressure, and $T(m)$ is the temperature.  Our goal is to solve for these four structure function for a specified total mass, $M$, and composition, parameterized as hydrogen mass fraction, $X$, and helium mass fraction $Y$.  What is then left is to specify the equation of state, $\rho(P, T)$, the energy generation per unit mass $\epsilon_n$, the temperature gradient, $\nabla = \partial\log T / \partial\log P$, and the opacity, $\kappa(\rho, T)$.
 
 We assume that the star is a fully ionized ideal gas, so its equation of state is
 \begin{equation}
@@ -51,7 +54,7 @@ where
 \begin{equation}
   \mu = \frac{1}{1 + 3X + Y/2}
 \end{equation}
-is the dimensionless mean molecular weight for hydrogen mass fraction, $X$, and helium mass fraction, $Y$.  The term on the right accounts for pressure due to radiation and is generally small compared to the gas pressure.
+is the dimensionless mean molecular weight.  The term on the right accounts for pressure due to radiation and is generally small compared to the gas pressure.
 
 For simplicity, we model energy transport such that convection efficiently transports any energy beyond the adiabatic limit, and so
 \begin{align} \nabla = \frac{T}{P}\D{T}{P} = 
@@ -79,6 +82,7 @@ For the CNO mass fraction, $X_\text{CNO}$, we assume that carbon, nitrogen, and 
 
 The last missing piece for completely specifying the derivatives is a relevant opacity model for stellar matter.  Here we use the OPAL opacity tables, taken from \url{http://opalopacity.llnl.gov/}, and interpolate between values of $\rho$ and $T$.
 
+\subsection{Boundary conditions}
 With all of the above, we have four coupled first-order differential equations.  To solve for our four structure profiles, we need to impose some physically meaningful boundary conditions.  Starting from a mass shell very close to the center, $m_c$, we can use the linearizations of equations \ref{eq:drdm} and \ref{eq:dldm} to get
 \begin{align}
   r_c &= \left(\frac{3}{4\pi \rho_c}\right)^{1/3} m_c^{1/3} \\
@@ -91,7 +95,42 @@ At the surface, we define our photosphere to be at the radius, $R_s$, where we h
   L_s &= 4\pi R_s^2 \sigma T_s^4 \nonumber
 \end{align}
 
+Since we only have four boundary condition equations with eight boundary values, we will have to make educated guesses for the other four, and evaluate how well we do in creating the four profiles.  For our purposes, we will propose the boundary values of $R_s$, $L_s$, $P_c$, and $T_c$, then use the relations above to create the full set of boundary values.
+
 \section{Numerics}
+
+We follow the strategy of shooting to a fixed point to solve the boundary value problem posed by the section above.  We choose a fixed mass shell at some fraction of the total mass.  We then iteratively propose a new set of boundary values, $\vec{y} = (R_s, L_s, P_c, T_c)$, and use these along with our boundary conditions to integrate the structure equations both outward from the center and inward from the surface, both ending at the fixed point.  We implement a fourth-order Runge-Kutta method for performing these integrations.
+
+We define the mismatch function as
+\begin{equation}
+  \vec{f}\left(\vec{y}) = (r_\text{in}(m_f) - r_\text{out}(m_f), \ \ell_\text{in}(m_f) - \ell_\text{out}(m_f), \  P_\text{in}(m_f) - P_\text{out}(m_f), \ T_\text{in}(m_f) - T_\text{out}(m_f)\right)
+\end{equation}
+The mismatch function thus maps the proposed boundary values, $\vec{y}$, to the set of difference between the inward and outward integrations at the fixed point, $m_f$.  Finding a solution to the boundary value problem amounts to finding the zero of the mismatch function.
+
+We approach this task by using a modified Newton-Raphson descent method.  We look at the linearization of $\vec{f}$ about $y$,
+\begin{equation}
+  \vec{f}(\vec{y} + \delta\vec{y}) \sim \vec{f}(\vec{y}) + J \delta\vec{y}
+\end{equation}
+Here, $J$ is the Jacobian of $\vec{f}$, defined as
+\begin{equation}
+  J = 
+  \begin{pmatrix}
+    \D{f_1}{y_1} & \ldots & \D{f_1}{y_n} \\
+    \vdots & \ddots & \vdots \\
+    \D{f_n}{y_1} & \ldots & \D{f_n}{y_n}
+  \end{pmatrix}
+\end{equation}
+
+We approximate the Jacobian through the finite difference method.  For each proposed boundary value, $y_i$, we can perturb the initial proposed vector to $\vec{y}_{\Delta_i} = \vec{y} + \Delta y_i \hat{i}$, where $\Delta$ is some small fraction.  The $i$-th column of $J$ is then given by
+\begin{equation}
+  \vec{J_i} =  \frac{\vec{y}_{\Delta_i} - \vec{y}}{\Delta y_i}
+\end{equation}
+
+If we wish to find the zero of $\vec{f}$, we need to choose the step $\delta \vec{y}$ such that $f(\vec{y} + \delta\vec{y}) \rightarrow 0$.  This leads to the proposed step
+\begin{equation}
+  \delta\vec{y} = -J^{-1}\vec{f}(\vec{y})
+\end{equation}
+Our next proposed set of boundary values is then given just by $\vec{y} + \delta\vec{y}$.  However, given that we have used only the linear term in the Taylor expansion of $\vec{f}$, this method will only work if we start very close to the true value of $\vec{y}$.  In practice, we will start with some poor guess for $\vec{y}$ for which the Newton-Raphson step will push us too far, leading to wild oscillations.  In order to create a chance for convergence, we down-weight the step $\delta\vec{y}$ by an amount such that $\max_i |\delta y_i / y_i| < 0.1$, and only allow for the full step once all changes are within 10\% of their previous value.
 
 \section{Results}
 
