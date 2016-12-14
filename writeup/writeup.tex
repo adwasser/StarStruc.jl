@@ -135,6 +135,8 @@ Our next proposed set of boundary values is then given just by $\vec{y} + \delta
 
 \section{Results}
 
+We tuned the basic algorithm described above to successfully converge for a 4 $M_\odot$ solar metallicity star.  The initial guesses for the boundary values came from \texttt{MESA} through the MESA-Web interface at \url{http://mesa-web.asu.edu/}.  These initial guesses are compared to the converged solution in Table~\ref{tab:results}.  The central temperatures and pressures match quite well, which largely explains the rapid convergence.  The radius converges to a value within a third of the input value, but the luminosity settles on a value close to twice that of the initial guess.
+
 \begin{table}[h]
   \centering
   \begin{tabular}{lllll}
@@ -147,14 +149,20 @@ Our next proposed set of boundary values is then given just by $\vec{y} + \delta
     \bottomrule
   \end{tabular}
   \caption{Comparison of model boundary values with inputs from \texttt{MESA}.}
+  \label{tab:results}
 \end{table}
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.9\linewidth]{mstar4.png}
-  \caption{Convergent model for 4 $M_\odot$.}
+  \caption{Structure profiles for 4 $M_\odot$ solar metallicity test case.}
 \end{figure}
-\section{Conclusions}
+
+\section{Discussion}
+
+The test case runs in less than two minutes on an Intel 2.6 GHz CPU, with a memory usage of 1.24 Gb.  This is a significant advantage compared to other stellar structure codes written in python, for which each iteration of the Newton-Raphson steps could take around a minute.  The code could be significantly sped up by parallelizing the set of integrations for each computation of the Jacobian, and it is clear that the code would benefit from a more careful treatment of space utilization.
+
+Julia is a different beast than python.  While there are a number of third party numeric libraries out there already for Julia, the community has not yet converged on a unified scientific stack in the same way that python has unified behind numpy and scipy.  I ended up implementing my own Runge-Kutta integrator and my own Newton-Raphson zero finding code, almost directly out of Numerical Recipes, which served my purposes well enough.  Having come from a background in mostly python, learning Julia brought a number of challenges, from relatively minor ones like its one-based array indexing, to trickier ones like the shift from object-oriented programming to a more functional programming style.  My personal verdict is that Julia shows much promise for developing tools to tackle numerically challenging problems, but it is not going to replace python as my general purpose scripting language anytime in the near future.
 
 \end{document}
 
