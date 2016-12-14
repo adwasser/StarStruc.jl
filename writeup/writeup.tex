@@ -10,6 +10,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{hyperref}
+\usepackage{booktabs}
 
 \newcommand{\E}[1]{\ensuremath{\times 10^{#1}}}
 \newcommand{\D}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
@@ -134,6 +135,25 @@ Our next proposed set of boundary values is then given just by $\vec{y} + \delta
 
 \section{Results}
 
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lllll}
+    Value & $R_s$ & $L_s$ & $\log_{10} P_c$ & $\log_{10} T_c$ \\
+    \toprule
+    Units & $R_\odot$ & $L_\odot$ & dyne cm$^{-2}$ & K \\
+    \midrule
+    \texttt{StarStruc} & 4.47 & 657.43 & 16.94 & 7.41 \\
+    \texttt{MESA} & 3.39 & 318.24 & 16.86 & 7.43 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Comparison of model boundary values with inputs from \texttt{MESA}.}
+\end{table}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.9\linewidth]{mstar4.png}
+  \caption{Convergent model for 4 $M_\odot$.}
+\end{figure}
 \section{Conclusions}
 
 \end{document}
